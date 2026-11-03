@@ -1,0 +1,90 @@
+# Namespace is created by Argo (CreateNamespace=true) or exists already.
+# Do not include a Namespace object here: AppProjects from argocd:create-resources
+# deny cluster-scoped resources, which causes "Namespace is not permitted" / Missing.
+---
+# Allow OpenShift GitOps to manage resources in this namespace (sync before workloads)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argocd-application-controller-admin
+  namespace: spring-demos
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+subjects:
+  - kind: ServiceAccount
+    name: openshift-gitops-argocd-application-controller
+    namespace: openshift-gitops
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-app6
+  namespace: spring-demos
+  labels:
+    app: spring-app6
+    app.kubernetes.io/part-of: spring-app6
+    app.openshift.io/runtime: spring-boot
+    backstage.io/kubernetes-id: spring-app6
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-app6
+  template:
+    metadata:
+      labels:
+        app: spring-app6
+        app.kubernetes.io/part-of: spring-app6
+        app.openshift.io/runtime: spring-boot
+        backstage.io/kubernetes-id: spring-app6
+    spec:
+      containers:
+        - name: app
+          # Demo image — replace with Quay-built image once CI push is enabled
+          # Tag "latest" does not exist on this repo; use a real tag.
+          image: quay.io/openshifttest/hello-openshift:1.2.0
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: spring-app6-config
+            - secretRef:
+                name: spring-app6-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-app6
+  namespace: spring-demos
+  labels:
+    app: spring-app6
+    backstage.io/kubernetes-id: spring-app6
+spec:
+  selector:
+    app: spring-app6
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: spring-app6
+  namespace: spring-demos
+  labels:
+    app: spring-app6
+    backstage.io/kubernetes-id: spring-app6
+spec:
+  to:
+    kind: Service
+    name: spring-app6
+  port:
+    targetPort: http
+  tls:
+    termination: edge
