@@ -50,6 +50,9 @@ metadata:
     - url: https://quay.io/repository/openshifttest/hello-openshift
       title: Demo image (Quay)
       icon: catalog
+    - url: https://devspaces.apps.cluster-ldkv4.dyn.redhatworkshops.io/#https://github.com/dl-rhdh-org/spring-app6
+      title: Open in Dev Spaces
+      icon: catalog
 spec:
   type: service
   lifecycle: experimental
